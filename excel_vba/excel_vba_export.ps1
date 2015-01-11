@@ -2,19 +2,19 @@
 
 Get-ChildItem -Recurse -Include *.xls,*.xlsx | ForEach-Object {
     export_vba $_.Name
-
-
 }
 
 function export_vba($file_name){
-    $file_path = Join-Path $PWD $file_name
+    create_export_directory $file_name
 
     $excel = new-object -ComObject Excel.Application
+    $file_path = Join-Path $PWD $file_name
 
     $excel.Workbooks.Open($file_path) | % {
         $_.VBProject.VBComponents | % {
-         
-            $file_path = create_export_file_name $_ $file_name
+            $export_file_path = create_export_file_name $_ $file_name
+
+            $_.Export($export_file_path)
         }
     }
 
@@ -22,28 +22,35 @@ function export_vba($file_name){
 }
 
 function create_export_directory($file_name) {
-    $root_directory_name = 
-    $directory = Join-Path $PWD $file_name
-    
+    $extension_exclude_name =[System.IO.Path]::GetFileNameWithoutExtension($file_name)
+    $file_path = Join-Path $PWD $extension_exclude_name
 
-    $directories = @("module", "class", "form", "document_module")
+    # TODO ActiveX Object
+    $sub_directories = @("module", "class", "form", "document_module")
 
-    foreach($directories in $directory) {
+    foreach($sub_directory in $sub_directories) {
+        $create_directory_path = Join-Path $file_path $sub_directory
 
+        create_directory $create_directory_path
     }
 
 }
 
+function create_directory($directory_path) {
+    if(!(Test-Path $directory_path)){
+        mkdir $directory_path
+    }
+}
 
 function create_export_file_name($vb_component, $export_target_file) {
 
-    switch($vb_component.Type) 
+    switch($vb_component.Type)
     {
-        1{ 
+        1{
             $extension = ".bas"
             $directory = "module"
         }
-        2{ 
+        2{
             $extension = ".cls"
             $directory = "class"
         }
