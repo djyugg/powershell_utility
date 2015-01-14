@@ -1,7 +1,7 @@
 ﻿
 
-Get-ChildItem -Recurse -Include *.xls,*.xlsx | ForEach-Object {
-    export_vba $_.Name
+Resolve-Path *.xls,*.xlsx | ForEach-Object {
+    export_vba $_.Path
 }
 
 function export_vba($file_name){
@@ -11,9 +11,7 @@ function export_vba($file_name){
     create_export_directory $root_directory_path
 
     $excel = new-object -ComObject Excel.Application
-    $file_path = Join-Path $PWD $file_name
-
-    $excel.Workbooks.Open($file_path) | % {
+    $excel.Workbooks.Open($file_name) | % {
         $_.VBProject.VBComponents | % {
             $export_file_path = create_export_file_name $_ $root_directory_path
 
